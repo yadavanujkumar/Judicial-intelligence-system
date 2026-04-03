@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: judicial_db
+      POSTGRES_USER: judicial
+      POSTGRES_PASSWORD: judicial123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judicial -d judicial_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://judicial:judicial123@postgres:5432/judicial_db
+      SECRET_KEY: judicial-intelligence-secret-key-2024
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+    restart: on-failure
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on:
+      - backend
+    restart: on-failure
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+
+volumes:
+  postgres_data:
