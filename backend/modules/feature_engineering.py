@@ -45,8 +45,9 @@ class FeatureEngineer:
             else:
                 if col in self.encoders:
                     le = self.encoders[col]
+                    # Unknown categories are mapped to 0 (same as "Unknown" class used during fit)
                     df[f"{col}_enc"] = df[col].apply(
-                        lambda x: le.transform([x])[0] if x in le.classes_ else -1
+                        lambda x: int(le.transform([x])[0]) if x in le.classes_ else 0
                     )
                 else:
                     df[f"{col}_enc"] = 0
@@ -97,7 +98,7 @@ class FeatureEngineer:
         if "outcome" in df.columns and "outcome_enc" in df.columns:
             df_out = df.dropna(subset=["outcome"])
             X_outcome = df_out[feature_cols_out].fillna(0)
-            y_outcome = df_out["outcome_enc"]
+            y_outcome = df_out["outcome"].astype(str)
         else:
             X_outcome = pd.DataFrame()
             y_outcome = pd.Series(dtype=int)

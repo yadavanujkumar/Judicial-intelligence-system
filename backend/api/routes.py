@@ -74,6 +74,19 @@ def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
 
 
+def _duration_confidence(shap_values: dict, predicted_days: float) -> float:
+    """Derive a confidence score [0.50, 0.99] from SHAP values.
+
+    The larger the dominant SHAP contribution relative to the predicted value,
+    the less certain the model is, so confidence decreases accordingly.
+    """
+    if not shap_values or predicted_days <= 0:
+        return 0.75
+    max_abs_shap = max(abs(v) for v in shap_values.values())
+    raw = 1.0 - (max_abs_shap / (predicted_days + 1))
+    return round(min(0.99, max(0.50, raw)), 4)
+
+
 @router.post("/predict-duration", response_model=DurationResponse)
 def predict_duration(req: DurationRequest, db: Session = Depends(get_db)):
     """Predict case duration given case metadata."""
@@ -95,8 +108,7 @@ def predict_duration(req: DurationRequest, db: Session = Depends(get_db)):
 
         predicted = dp.predict(features)
         explanation = dp.explain(features)
-        max_val = max(abs(v) for v in explanation.values()) if explanation else 1
-        confidence = round(min(0.99, max(0.50, 1.0 - (max_val / (predicted + 1)))), 4)
+        confidence = _duration_confidence(explanation, predicted)
 
         return {"predicted_duration_days": predicted, "confidence": confidence, "explanation": explanation}
     except HTTPException:

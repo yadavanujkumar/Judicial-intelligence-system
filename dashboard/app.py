@@ -75,6 +75,11 @@ JUDGES = [
 ]
 
 
+def shorten_court_name(name: str) -> str:
+    """Return an abbreviated court name for use in chart labels."""
+    return name.replace(" High Court", " HC").replace("Supreme Court of India", "SC India")
+
+
 def mock_analytics() -> dict:
     random.seed(42)
     court_analytics = [{
@@ -453,7 +458,7 @@ elif page == "📊 Judicial Analytics":
         court_df = pd.DataFrame(data.get("court_analytics", []))
         if not court_df.empty:
             court_df = court_df.sort_values("avg_duration", ascending=False)
-            court_df["court_short"] = court_df["court"].str.replace(" High Court", " HC").str.replace("Supreme Court of India", "SC India")
+            court_df["court_short"] = court_df["court"].apply(shorten_court_name)
             fig = px.bar(court_df, x="court_short", y="avg_duration", color="avg_duration",
                          color_continuous_scale="RdYlGn_r", labels={"avg_duration": "Avg Duration (days)", "court_short": "Court"})
             fig.update_layout(xaxis_tickangle=-35, height=420, margin=dict(b=120))
@@ -522,7 +527,7 @@ elif page == "📉 Court Backlog Analysis":
             if "total_cases" not in merged.columns:
                 merged["total_cases"] = merged.get("backlog_cases", 0) * 2
 
-        merged["court_short"] = merged["court"].str.replace(" High Court", " HC").str.replace("Supreme Court of India", "SC India")
+        merged["court_short"] = merged["court"].apply(shorten_court_name)
         merged = merged.sort_values("backlog_cases", ascending=False)
 
         col1, col2 = st.columns(2)

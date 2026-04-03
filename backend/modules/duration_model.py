@@ -61,6 +61,8 @@ class DurationPredictor:
             self.load_model()
         X = self._dict_to_array(features_dict)
         pred = float(self.model.predict(X)[0])
+        if pred <= 0:
+            logger.warning(f"Model predicted non-positive duration ({pred:.2f}); clamping to 1.0 day")
         return max(1.0, round(pred, 1))
 
     def explain(self, features_dict: dict) -> dict:
