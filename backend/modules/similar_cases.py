@@ -77,7 +77,7 @@ class SimilarCaseRetriever:
                 results.append({
                     "case_id": self.case_ids[idx],
                     "similarity_score": round(float(dist), 4),
-                    "text": self.texts[idx][:500] if idx < len(self.texts) else "",
+                    "summary": self.texts[idx][:500] if idx < len(self.texts) else "",
                 })
             return results
         except Exception as e:

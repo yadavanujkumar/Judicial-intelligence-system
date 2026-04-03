@@ -144,7 +144,7 @@ def similar_cases(req: SimilarCasesRequest):
         retriever = state.similar_case_retriever
         results = retriever.search(req.judgment_text, top_k=req.top_k)
         return {"similar_cases": [
-            {"case_id": r["case_id"], "similarity_score": r["similarity_score"], "summary": r["text"]}
+            {"case_id": r["case_id"], "similarity_score": r["similarity_score"], "summary": r["summary"]}
             for r in results
         ]}
     except Exception as e:
